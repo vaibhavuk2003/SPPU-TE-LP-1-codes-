@@ -1,0 +1,61 @@
+package LRU;
+import java.util.*;
+
+public class LRU {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		
+		 Scanner sc = new Scanner(System.in);
+
+	        System.out.println("Enter Number of frames: ");
+	        int numberofframes = sc.nextInt();
+
+	        System.out.println("Enter Number of pages:");
+	        int pages = sc.nextInt();
+
+	        int ReferenceString[] = new int[pages];
+
+	        System.out.println("Enter Page Reference String:");
+	        for (int i = 0; i < pages; i++) {
+	            ReferenceString[i] = sc.nextInt();
+	        }
+
+	        int hit = 0;
+	        int miss = 0;
+
+
+	        List<Integer> Frames = new ArrayList<>(numberofframes);
+	       
+	        for (int i = 0; i < pages; i++) {
+	            boolean isHit = false;
+
+	            if (Frames.contains(ReferenceString[i])) {
+	                hit++;
+	                isHit = true;
+
+	                Frames.remove(Integer.valueOf(ReferenceString[i]));
+	                Frames.add(ReferenceString[i]);
+
+	            }
+
+	            if (isHit == false) {
+	                miss++;
+
+	                if (Frames.size() == numberofframes) {
+	                    Frames.remove(0);
+
+	                }
+	                Frames.add(ReferenceString[i]);
+
+	            }
+
+	            System.out.println("Frames: "+ Frames);
+
+	        }
+	        System.out.println("Number of hits: " + hit);
+	        System.out.println("Number Of Page faults:" + miss);
+	        sc.close();
+	}
+
+}

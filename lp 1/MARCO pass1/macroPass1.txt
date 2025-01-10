@@ -1,0 +1,138 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
+
+public class macroPass1 {
+
+    // Initialize ALA with enough space (assuming max 10 arguments per macro, adjust as needed)
+    static String[][] ala = new String[10][2]; // [][0] = Arg Index, [][1] = Arg Name
+    static int alac = 0; // Argument List Array counter
+
+    public static void main(String[] Args) throws IOException {
+        // Initialize readers and writers
+        BufferedReader b1 = new BufferedReader(new FileReader("input.txt"));
+        FileWriter f1 = new FileWriter("intermediate.txt");
+        FileWriter f2 = new FileWriter("mnt.txt");
+        FileWriter f3 = new FileWriter("mdt.txt");
+        FileWriter f4 = new FileWriter("kpdt.txt");
+        FileWriter f5 = new FileWriter("ala.txt"); // For Argument List Array
+
+        // Create a HashMap for the parameter name table (pntab)
+        HashMap<String, Integer> pntab = new HashMap<String, Integer>();
+
+        // Initialize various counters and flags
+        int paramNo = 1, mdtp = 1, flag = 0, pp = 0, kp = 0, kpdtp = 0;
+
+        // Read input file line by line
+        String s;
+        while ((s = b1.readLine()) != null) {
+            // Debugging line
+            System.out.println("Line: " + s);
+
+            String[] word = s.split("\\s"); // Split line by spaces
+
+            // Ensure the line has at least one word before accessing word[0]
+            if (word.length > 0 && word[0].compareToIgnoreCase("MACRO") == 0) {
+                flag = 1; // Set flag to 1 to indicate macro processing starts
+
+                // Check if there are no parameters for the macro
+                if (word.length <= 2) {
+                    // Write to MNT (Macro Name Table) file
+                    f2.write(word[1] + "\t" + pp + "\t" + kp + "\t" + mdtp + "\t" + (kp == 0 ? kpdtp : (kpdtp + 1)) + "\n");
+                    continue; // Skip further processing and move to next line
+                }
+
+                // Process parameters if they exist
+                String[] params = word[2].split(","); // Split parameters by comma
+                for (int i = 0; i < params.length; i++) {
+                    // If the parameter has a default value (keyword parameter)
+                    if (params[i].contains("=")) {
+                        kp++; // Increase keyword parameter count
+                        String[] keywordParam = params[i].split("="); // Split by '='
+                        
+                        // Add the parameter name to the pntab map
+                        pntab.put(keywordParam[0].substring(1), paramNo++);
+                        
+                        // Write the keyword parameter and its default value to KPDT (Keyword Parameter Default Table)
+                        if (keywordParam.length == 2) {
+                            f4.write(keywordParam[0].substring(1) + "\t" + keywordParam[1] + "\n");
+                        } else {
+                            f4.write(keywordParam[0].substring(1) + "\t" + "-" + "\n");
+                        }
+
+                        // Add to the Argument List Array (ALA) as keyword parameter
+                        ala[alac][0] = String.valueOf(alac + 1); // Argument Index (1-based)
+                        ala[alac++][1] = keywordParam[0].substring(1); // Argument Name
+                    } else {
+                        // If it's a positional parameter, add it to the pntab map
+                        pntab.put(params[i].substring(1), paramNo++);
+                        pp++; // Increase positional parameter count
+
+                        // Add to the Argument List Array (ALA) as positional parameter
+                        ala[alac][0] = String.valueOf(alac + 1); // Argument Index (1-based)
+                        ala[alac++][1] = params[i].substring(1); // Argument Name
+                    }
+                }
+
+                // Write the macro name, parameter counts, and MDT pointer to MNT
+                f2.write(word[1] + "\t" + pp + "\t" + kp + "\t" + mdtp + "\t" + (kp == 0 ? kpdtp : (kpdtp + 1)) + "\n");
+
+                // Update the keyword parameter table pointer
+                kpdtp += kp;
+            } 
+            // Check for the "MEND" keyword
+            else if (word.length > 0 && word[0].compareToIgnoreCase("MEND") == 0) {
+                f3.write(s + "\n"); // Write to MDT (Macro Definition Table)
+                flag = pp = kp = 0; // Reset flags and counts
+                mdtp++; // Increment MDT pointer
+                paramNo = 1; // Reset parameter number
+                pntab.clear(); // Clear the parameter name table
+            } 
+            // If the line is part of the macro body
+            else if (flag == 1) {
+                // Process the macro body
+                for (int i = 0; i < s.length(); i++) {
+                    if (s.charAt(i) == '&') {
+                        i++; // Skip the '&'
+                        String temp = "";
+                        // Extract parameter name (until space or comma)
+                        while (!(s.charAt(i) == ' ' || s.charAt(i) == ',')) {
+                            temp += s.charAt(i++);
+                            if (i == s.length()) break;
+                        }
+                        i--; // Move back one character
+
+                        // Replace the parameter with its index from pntab
+                        f3.write("#" + pntab.get(temp)); 
+                    } else {
+                        // Otherwise, write the character as-is
+                        f3.write(s.charAt(i));
+                    }
+                }
+                f3.write("\n"); // End the line in MDT
+                mdtp++; // Increment the Macro Definition Table pointer
+            } 
+            // If the line is not part of a macro, write to the intermediate file
+            else {
+                f1.write(s + "\n");
+            }
+        }
+
+        // Write the ALA (Argument List Array) content to a file
+        System.out.println("Argument List Array (ALA):");
+        for (int i = 0; i < alac; i++) {
+            f5.write(ala[i][0] + "\t" + ala[i][1] + "\n");
+            System.out.println(ala[i][0] + "\t" + ala[i][1]);
+        }
+
+        // Close all file streams
+        b1.close();
+        f1.close();
+        f2.close();
+        f3.close();
+        f4.close();
+        f5.close();
+    }
+}

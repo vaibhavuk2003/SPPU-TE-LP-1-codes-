@@ -1,0 +1,9 @@
+MACRO ADDITION &arg1,&arg2,&arg3
+MOV ax,&arg1
+ADD ax,&arg2
+ADD ax,&arg3
+MEND
+ADD ax, bx
+SUB ax, 10
+ADDITION 34,45,44
+END
